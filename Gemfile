@@ -40,6 +40,7 @@ group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
   gem 'rspec-rails'
   gem 'simplecov', require: false
+  gem 'factory_bot_rails'
   # Audits gems for known security defects (use config/bundler-audit.yml to ignore issues)
   gem "bundler-audit", require: false
 
