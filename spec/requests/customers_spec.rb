@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe "Customers API", type: :request do
+RSpec.describe "Customers", type: :request do
   describe "happy path" do
     describe "GET /customers" do
       it "can return all customers" do
@@ -55,6 +55,37 @@ RSpec.describe "Customers API", type: :request do
         expect(json["stage"]).to eq("lead")
       end
     end
+
+    describe "PATCH /customers/:id/move_stage" do
+      it "updates the customer's stage and creates a stage log" do
+        customer = Customer.create!(
+          name: "Sara Jones",
+          email: "sara@example.com",
+          company: "Acme Co",
+          stage: :lead
+        )
+
+        patch "/customers/#{customer.id}/move_stage",
+          params: {
+            customer: {
+              stage: "contacted"
+            }
+          },
+          as: :json
+
+        expect(response.status).to eq(200)
+
+        customer.reload
+
+        expect(customer.stage).to eq("contacted")
+        expect(customer.stage_logs.count).to eq(1)
+
+        stage_log = customer.stage_logs.last
+
+        expect(stage_log.from_stage).to eq(Customer.stages["lead"])
+        expect(stage_log.to_stage).to eq(Customer.stages["contacted"])
+      end
+    end
   end
 
   describe "sad path" do
@@ -69,6 +100,26 @@ RSpec.describe "Customers API", type: :request do
         }
 
         post "/customers", params: customer_params, as: :json
+
+        expect(response.status).to eq(422)
+
+        json = JSON.parse(response.body)
+
+        expect(json).to have_key("errors")
+      end
+    end
+
+    describe "PATCH /customers/:id/move_stage" do
+      it "fails when updating to an invalid stage" do
+        customer = create(:customer, name: "Test Customer", stage: "lead")
+
+        patch "/customers/#{customer.id}/move_stage",
+          params: {
+            customer: {
+              stage: "invalid_stage"
+            }
+          },
+          as: :json
 
         expect(response.status).to eq(422)
 
