@@ -22,19 +22,19 @@ class CustomersController < ApplicationController
   end
 
   def move_stage
-    customer = Customer.find(params[:id])
-    old_stage = customer.stage
-    new_stage = params.require(:customer).permit(:stage)[:stage]
+  customer = Customer.find(params[:id])
+  old_stage = customer.stage
+  new_stage = params.require(:customer).permit(:stage)[:stage]
 
-    if customer.update(stage: new_stage)
+    begin
+      customer.update!(stage: new_stage)  # Use update! to raise on invalid enum
       StageLog.create!(
         customer: customer,
         from_stage: Customer.stages[old_stage],
         to_stage: Customer.stages[new_stage]
       )
-
       render json: customer, status: :ok
-    else
+    rescue ArgumentError, ActiveRecord::RecordInvalid
       render_validation_errors(customer)
     end
   end
