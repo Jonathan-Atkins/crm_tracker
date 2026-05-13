@@ -22,9 +22,9 @@ class CustomersController < ApplicationController
   end
 
   def move_stage
-  customer = Customer.find(params[:id])
-  old_stage = customer.stage
-  new_stage = params.require(:customer).permit(:stage)[:stage]
+    customer = Customer.find(params[:id])
+    old_stage = customer.stage
+    new_stage = params.require(:customer).permit(:stage)[:stage]
 
     begin
       customer.update!(stage: new_stage)  # Use update! to raise on invalid enum
@@ -36,6 +36,16 @@ class CustomersController < ApplicationController
       render json: customer, status: :ok
     rescue ArgumentError, ActiveRecord::RecordInvalid
       render_validation_errors(customer)
+    end
+  end
+
+  def destroy
+    begin
+      customer = Customer.find(params[:id])
+      customer.destroy
+      render status: :no_content
+    rescue ActiveRecord::RecordNotFound
+      customer_not_found
     end
   end
 

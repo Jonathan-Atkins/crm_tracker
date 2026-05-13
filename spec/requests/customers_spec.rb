@@ -86,6 +86,17 @@ RSpec.describe "Customers", type: :request do
         expect(stage_log.to_stage).to eq(Customer.stages["contacted"])
       end
     end
+
+    describe "DELETE /customers/:id" do
+      it "deletes an existing customer" do
+        customer = create(:customer, name: "Test Customer")
+
+        delete "/customers/#{customer.id}", as: :json
+
+        expect(response.status).to eq(204)
+        expect(Customer.find_by(id: customer.id)).to be_nil
+      end
+    end
   end
 
   describe "sad path" do
@@ -126,6 +137,19 @@ RSpec.describe "Customers", type: :request do
         json = JSON.parse(response.body)
 
         expect(json).to have_key("errors")
+      end
+    end
+
+    describe "DELETE /customers/:id" do
+      it "fails when deleting a non-existent customer" do
+        delete "/customers/99999", as: :json
+
+        expect(response.status).to eq(404)
+
+        json = JSON.parse(response.body)
+
+        expect(json).to have_key("error")
+        expect(json["error"]).to eq("Customer not found")
       end
     end
   end
