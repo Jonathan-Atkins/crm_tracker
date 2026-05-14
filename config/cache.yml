@@ -10,4 +10,4 @@ test:
   <<: *default
 
 production:
-  store: memory_store
+  <<: *default
