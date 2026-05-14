@@ -32,7 +32,7 @@ class Api::V1::CustomersController < ApplicationController
 
   def destroy
     @customer.destroy
-    render status: :no_content
+    head :no_content
   end
 
   def move_stage
@@ -49,15 +49,19 @@ class Api::V1::CustomersController < ApplicationController
   end
 
   def customer_params
-    params.require(:customer).permit(:name, :email, :company, :stage)
+    customer_body.permit(:name, :email, :company, :stage)
   end
 
   def update_customer_params
-    params.require(:customer).permit(:name, :email, :company)
+    customer_body.permit(:name, :email, :company)
   end
 
   def stage_params
-    params.require(:customer).permit(:stage)
+    customer_body.permit(:stage)
+  end
+
+  def customer_body
+    params.require(:customer)
   end
 
   def customer_not_found
