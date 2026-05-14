@@ -15,4 +15,17 @@ class Customer < ApplicationRecord
   validates :email, presence: true
   validates :company, presence: true
   validates :stage, presence: true
+
+  def move_to_stage!(new_stage)
+    old_stage = stage
+
+    Customer.transaction do
+      update!(stage: new_stage)
+
+      stage_logs.create!(
+        from_stage: Customer.stages.fetch(old_stage),
+        to_stage: Customer.stages.fetch(new_stage)
+      )
+    end
+  end
 end

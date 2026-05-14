@@ -24,6 +24,12 @@ RSpec.describe Customer, type: :model do
       expect(customer).not_to be_valid
       expect(customer.errors[:company]).to be_present
     end
+
+    it "is invalid without stage" do
+      customer = build(:customer, stage: nil)
+      expect(customer).not_to be_valid
+      expect(customer.errors[:stage]).to be_present
+    end
   end
 
   describe "associations" do
@@ -40,6 +46,18 @@ RSpec.describe Customer, type: :model do
     it "defines valid enum stages" do
       customer = build(:customer)
       expect(Customer.stages.keys).to include("lead", "contacted", "qualified", "trial_demo", "closed_won", "closed_lost")
+    end
+  end
+
+  describe "move_to_stage!" do
+    it "updates stage and creates a stage log" do
+      customer = create(:customer, stage: "lead")
+      
+      expect {
+        customer.move_to_stage!("contacted")
+      }.to change(StageLog, :count).by(1)
+      
+      expect(customer.reload.stage).to eq("contacted")
     end
   end
 end

@@ -1,87 +1,70 @@
 class Api::V1::CustomersController < ApplicationController
-      rescue_from ActiveRecord::RecordNotFound, with: :customer_not_found
+  rescue_from ActiveRecord::RecordNotFound, with: :customer_not_found
 
-      def index
-        customers = Customer.all
-        render json: customers, status: :ok
-      end
+  before_action :set_customer, only: [:show, :update, :destroy, :move_stage]
 
-      def show
-        customer = Customer.find(params[:id])
-        render json: customer, status: :ok
-      end
+  def index
+    customers = Customer.all
+    render json: customers, status: :ok
+  end
 
-      def create
-        customer = Customer.new(customer_params)
+  def show
+    render json: @customer, status: :ok
+  end
 
-        if customer.save
-          render json: customer, status: :created
-        else
-          render_validation_errors(customer)
-        end
-      end
+  def create
+    customer = Customer.new(customer_params)
 
-      def update
-        customer = Customer.find(params[:id])
+    if customer.save
+      render json: customer, status: :created
+    else
+      render_validation_errors(customer)
+    end
+  end
 
-        if customer.update(update_customer_params)
-          render json: customer, status: :ok
-        else
-          render_validation_errors(customer)
-        end
-      end
+  def update
+    if @customer.update(update_customer_params)
+      render json: @customer, status: :ok
+    else
+      render_validation_errors(@customer)
+    end
+  end
 
-      def destroy
-        begin
-          customer = Customer.find(params[:id])
-          customer.destroy
-          render status: :no_content
-        rescue ActiveRecord::RecordNotFound
-          customer_not_found
-        end
-      end
+  def destroy
+    @customer.destroy
+    render status: :no_content
+  end
 
-      def move_stage
-        customer = Customer.find(params[:id])
-        old_stage = customer.stage
-        new_stage = params.require(:customer).permit(:stage)[:stage]
+  def move_stage
+    @customer.move_to_stage!(stage_params[:stage])
+    render json: @customer, status: :ok
+  rescue ArgumentError, ActiveRecord::RecordInvalid, KeyError
+    render_validation_errors(@customer)
+  end
 
-        begin
-          Customer.transaction do
-            customer.update!(stage: new_stage)
-            update_log(customer, old_stage, new_stage)
-          end
+  private
 
-          render json: customer, status: :ok
-        rescue ArgumentError, ActiveRecord::RecordInvalid, KeyError
-          render_validation_errors(customer)
-        end
-      end
+  def set_customer
+    @customer = Customer.find(params[:id])
+  end
 
-      private
+  def customer_params
+    params.require(:customer).permit(:name, :email, :company, :stage)
+  end
 
-      def customer_params
-        params.require(:customer).permit(:name, :email, :company, :stage)
-      end
+  def update_customer_params
+    params.require(:customer).permit(:name, :email, :company)
+  end
 
-      def customer_not_found
-        render json: { error: "Customer not found" }, status: :not_found
-      end
+  def stage_params
+    params.require(:customer).permit(:stage)
+  end
 
-      def render_validation_errors(record)
-        render json: { errors: record.errors.full_messages }, status: :unprocessable_entity
-      end
+  def customer_not_found
+    render json: { error: "Customer not found" }, status: :not_found
+  end
 
-      def update_log(customer,from_stage,to_stage)
-        StageLog.create!(
-            customer: customer,
-            from_stage: Customer.stages.fetch(from_stage),
-            to_stage: Customer.stages.fetch(to_stage)
-          )
-      end
-
-      def update_customer_params
-        params.require(:customer).permit(:name, :email, :company)
-      end
+  def render_validation_errors(record)
+    render json: { errors: record.errors.full_messages }, status: :unprocessable_entity
+  end
 end
-
