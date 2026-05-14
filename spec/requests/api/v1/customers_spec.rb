@@ -56,6 +56,30 @@ RSpec.describe "API::V1::Customers", type: :request do
     end
 
     describe "PATCH /api/v1/customers/:id" do
+      it "updates customer attributes" do
+        customer = create(:customer, name: "John Doe", email: "john@example.com")
+
+        patch "/api/v1/customers/#{customer.id}",
+          params: {
+            customer: {
+              name: "Jane Doe",
+              email: "jane@example.com",
+              company: "New Company"
+            }
+          },
+          as: :json
+
+        expect(response.status).to eq(200)
+
+        customer.reload
+
+        expect(customer.name).to eq("Jane Doe")
+        expect(customer.email).to eq("jane@example.com")
+        expect(customer.company).to eq("New Company")
+      end
+    end
+
+    describe "PATCH /api/v1/customers/:id/move_stage" do
       it "updates the customer's stage and creates a stage log" do
         customer = Customer.create!(
           name: "Sara Jones",
@@ -64,7 +88,7 @@ RSpec.describe "API::V1::Customers", type: :request do
           stage: :lead
         )
 
-        patch "/api/v1/customers/#{customer.id}",
+        patch "/api/v1/customers/#{customer.id}/move_stage",
           params: {
             customer: {
               stage: "contacted"
@@ -83,26 +107,6 @@ RSpec.describe "API::V1::Customers", type: :request do
 
         expect(stage_log.from_stage).to eq(Customer.stages["lead"])
         expect(stage_log.to_stage).to eq(Customer.stages["contacted"])
-      end
-
-      it "updates customer fields without stage change" do
-        customer = create(:customer, name: "John Doe", email: "john@example.com")
-
-        patch "/api/v1/customers/#{customer.id}",
-          params: {
-            customer: {
-              name: "Jane Doe",
-              company: "New Company"
-            }
-          },
-          as: :json
-
-        expect(response.status).to eq(200)
-
-        customer.reload
-
-        expect(customer.name).to eq("Jane Doe")
-        expect(customer.company).to eq("New Company")
       end
     end
 
@@ -140,13 +144,14 @@ RSpec.describe "API::V1::Customers", type: :request do
     end
 
     describe "PATCH /api/v1/customers/:id" do
-      it "fails when updating to an invalid stage" do
-        customer = create(:customer, name: "Test Customer", stage: "lead")
+      it "fails when updating customer with invalid params" do
+        customer = create(:customer, name: "Test Customer")
 
         patch "/api/v1/customers/#{customer.id}",
           params: {
             customer: {
-              stage: "invalid_stage"
+              email: "",
+              name: "Updated"
             }
           },
           as: :json
@@ -157,15 +162,16 @@ RSpec.describe "API::V1::Customers", type: :request do
 
         expect(json).to have_key("errors")
       end
+    end
 
-      it "fails when updating customer with invalid params" do
-        customer = create(:customer, name: "Test Customer")
+    describe "PATCH /api/v1/customers/:id/move_stage" do
+      it "fails when updating to an invalid stage" do
+        customer = create(:customer, name: "Test Customer", stage: "lead")
 
-        patch "/api/v1/customers/#{customer.id}",
+        patch "/api/v1/customers/#{customer.id}/move_stage",
           params: {
             customer: {
-              email: "",
-              name: "Updated"
+              stage: "invalid_stage"
             }
           },
           as: :json

@@ -1,6 +1,4 @@
-module Api
-  module V1
-    class CustomersController < ApplicationController
+class Api::V1::CustomersController < ApplicationController
       rescue_from ActiveRecord::RecordNotFound, with: :customer_not_found
 
       def index
@@ -43,6 +41,23 @@ module Api
         end
       end
 
+      def move_stage
+        customer = Customer.find(params[:id])
+        old_stage = customer.stage
+        new_stage = params.require(:customer).permit(:stage)[:stage]
+
+        begin
+          Customer.transaction do
+            customer.update!(stage: new_stage)
+            update_log(customer, old_stage, new_stage)
+          end
+
+          render json: customer, status: :ok
+        rescue ArgumentError, ActiveRecord::RecordInvalid, KeyError
+          render_validation_errors(customer)
+        end
+      end
+
       private
 
       def customer_params
@@ -64,6 +79,9 @@ module Api
             to_stage: Customer.stages.fetch(to_stage)
           )
       end
-    end
-  end
+
+      def update_customer_params
+        params.require(:customer).permit(:name, :email, :company)
+      end
 end
+
