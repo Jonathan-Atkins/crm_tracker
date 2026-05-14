@@ -7,29 +7,10 @@ development:
   <<: *default
   database: crm_tracker_development
 
-# Warning: The database defined as "test" will be erased and
-# re-generated from your development database when you run "rake".
-# Do not set this db to the same as development or production.
 test:
   <<: *default
   database: crm_tracker_test
 
-# Store production database in the storage/ directory, which by default
-# is mounted as a persistent Docker volume in config/deploy.yml.
 production:
-  primary:
-    <<: *default
-    database: crm_tracker_production
-  cache:
-    <<: *default
-    database: crm_tracker_production
-    migrations_paths: db/cache_migrate
-  queue:
-    <<: *default
-    database: crm_tracker_production
-    migrations_paths: db/queue_migrate
-  cable:
-    <<: *default
-    database: crm_tracker_production
-    migrations_paths: db/cable_migrate
-
+  <<: *default
+  url: <%= ENV["DATABASE_URL"] %>
