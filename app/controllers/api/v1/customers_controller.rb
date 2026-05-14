@@ -23,6 +23,10 @@ class Api::V1::CustomersController < ApplicationController
   end
 
   def update
+    if params[:customer]&.key?(:stage)
+      return render json: { error: "Stage must be updated through move_stage endpoint" }, status: :unprocessable_entity
+    end
+
     if @customer.update(update_customer_params)
       render json: @customer, status: :ok
     else
