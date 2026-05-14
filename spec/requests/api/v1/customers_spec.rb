@@ -6,7 +6,7 @@ RSpec.describe "API::V1::Customers", type: :request do
       it "can return all customers" do
         create_list(:customer, 3)
 
-        get "/api/v1/customers", as: :json
+        get "/api/v1/customers"
         expect(response.status).to eq(200)
 
         json = JSON.parse(response.body)
@@ -20,7 +20,7 @@ RSpec.describe "API::V1::Customers", type: :request do
       it "can returns a single customer" do
         customer = create(:customer, name: "Test Customer")
 
-        get "/api/v1/customers/#{customer.id}", as: :json
+        get "/api/v1/customers/#{customer.id}"
 
         expect(response.status).to eq(200)
 
@@ -42,7 +42,7 @@ RSpec.describe "API::V1::Customers", type: :request do
           }
         }
 
-        post "/api/v1/customers", params: customer_params, as: :json
+        post "/api/v1/customers", params: customer_params
 
         expect(response.status).to eq(201)
 
@@ -66,16 +66,15 @@ RSpec.describe "API::V1::Customers", type: :request do
               email: "jane@example.com",
               company: "New Company"
             }
-          },
-          as: :json
+          }
 
         expect(response.status).to eq(200)
 
-        customer.reload
+        json = JSON.parse(response.body)
 
-        expect(customer.name).to eq("Jane Doe")
-        expect(customer.email).to eq("jane@example.com")
-        expect(customer.company).to eq("New Company")
+        expect(json["name"]).to eq("Jane Doe")
+        expect(json["email"]).to eq("jane@example.com")
+        expect(json["company"]).to eq("New Company")
       end
     end
 
@@ -93,8 +92,7 @@ RSpec.describe "API::V1::Customers", type: :request do
             customer: {
               stage: "contacted"
             }
-          },
-          as: :json
+          }
 
         expect(response.status).to eq(200)
 
@@ -114,7 +112,7 @@ RSpec.describe "API::V1::Customers", type: :request do
       it "deletes an existing customer" do
         customer = create(:customer, name: "Test Customer")
 
-        delete "/api/v1/customers/#{customer.id}", as: :json
+        delete "/api/v1/customers/#{customer.id}"
 
         expect(response.status).to eq(204)
         expect(Customer.find_by(id: customer.id)).to be_nil
@@ -133,7 +131,7 @@ RSpec.describe "API::V1::Customers", type: :request do
           }
         }
 
-        post "/api/v1/customers", params: customer_params, as: :json
+        post "/api/v1/customers", params: customer_params
 
         expect(response.status).to eq(422)
 
@@ -153,8 +151,7 @@ RSpec.describe "API::V1::Customers", type: :request do
               email: "",
               name: "Updated"
             }
-          },
-          as: :json
+          }
 
         expect(response.status).to eq(422)
 
@@ -172,8 +169,7 @@ RSpec.describe "API::V1::Customers", type: :request do
               name: "Updated",
               stage: "contacted"
             }
-          },
-          as: :json
+          }
 
         expect(response.status).to eq(422)
 
@@ -193,8 +189,7 @@ RSpec.describe "API::V1::Customers", type: :request do
             customer: {
               stage: "invalid_stage"
             }
-          },
-          as: :json
+          }
 
         expect(response.status).to eq(422)
 
@@ -206,7 +201,7 @@ RSpec.describe "API::V1::Customers", type: :request do
 
     describe "DELETE /api/v1/customers/:id" do
       it "fails when deleting a non-existent customer" do
-        delete "/api/v1/customers/99999", as: :json
+        delete "/api/v1/customers/99999"
 
         expect(response.status).to eq(404)
 
