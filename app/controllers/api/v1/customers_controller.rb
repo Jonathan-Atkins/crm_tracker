@@ -4,7 +4,7 @@ class Api::V1::CustomersController < ApplicationController
   before_action :set_customer, only: [:show, :update, :destroy, :move_stage]
 
   def index
-    customers = Customer.all
+    customers = Customer.order(:stage)
     render json: customers, status: :ok
   end
 
