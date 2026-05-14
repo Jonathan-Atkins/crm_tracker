@@ -1,12 +1,12 @@
 require "rails_helper"
 
-RSpec.describe "Customers", type: :request do
+RSpec.describe "API::V1::Customers", type: :request do
   describe "happy path" do
-    describe "GET /customers" do
+    describe "GET /api/v1/customers" do
       it "can return all customers" do
         create_list(:customer, 3)
 
-        get "/customers", as: :json
+        get "/api/v1/customers", as: :json
         expect(response.status).to eq(200)
 
         json = JSON.parse(response.body)
@@ -16,11 +16,11 @@ RSpec.describe "Customers", type: :request do
       end
     end
 
-    describe "GET /customers/:id" do
+    describe "GET /api/v1/customers/:id" do
       it "can returns a single customer" do
         customer = create(:customer, name: "Test Customer")
 
-        get "/customers/#{customer.id}", as: :json
+        get "/api/v1/customers/#{customer.id}", as: :json
 
         expect(response.status).to eq(200)
 
@@ -31,7 +31,7 @@ RSpec.describe "Customers", type: :request do
       end
     end
 
-    describe "POST /customers" do
+    describe "POST /api/v1/customers" do
       it "can create a valid customer" do
         customer_params = {
           customer: {
@@ -42,7 +42,7 @@ RSpec.describe "Customers", type: :request do
           }
         }
 
-        post "/customers", params: customer_params, as: :json
+        post "/api/v1/customers", params: customer_params, as: :json
 
         expect(response.status).to eq(201)
 
@@ -55,7 +55,7 @@ RSpec.describe "Customers", type: :request do
       end
     end
 
-    describe "PATCH /customers/:id/move_stage" do
+    describe "PATCH /api/v1/customers/:id" do
       it "updates the customer's stage and creates a stage log" do
         customer = Customer.create!(
           name: "Sara Jones",
@@ -64,7 +64,7 @@ RSpec.describe "Customers", type: :request do
           stage: :lead
         )
 
-        patch "/customers/#{customer.id}/move_stage",
+        patch "/api/v1/customers/#{customer.id}",
           params: {
             customer: {
               stage: "contacted"
@@ -84,13 +84,33 @@ RSpec.describe "Customers", type: :request do
         expect(stage_log.from_stage).to eq(Customer.stages["lead"])
         expect(stage_log.to_stage).to eq(Customer.stages["contacted"])
       end
+
+      it "updates customer fields without stage change" do
+        customer = create(:customer, name: "John Doe", email: "john@example.com")
+
+        patch "/api/v1/customers/#{customer.id}",
+          params: {
+            customer: {
+              name: "Jane Doe",
+              company: "New Company"
+            }
+          },
+          as: :json
+
+        expect(response.status).to eq(200)
+
+        customer.reload
+
+        expect(customer.name).to eq("Jane Doe")
+        expect(customer.company).to eq("New Company")
+      end
     end
 
-    describe "DELETE /customers/:id" do
+    describe "DELETE /api/v1/customers/:id" do
       it "deletes an existing customer" do
         customer = create(:customer, name: "Test Customer")
 
-        delete "/customers/#{customer.id}", as: :json
+        delete "/api/v1/customers/#{customer.id}", as: :json
 
         expect(response.status).to eq(204)
         expect(Customer.find_by(id: customer.id)).to be_nil
@@ -99,7 +119,7 @@ RSpec.describe "Customers", type: :request do
   end
 
   describe "sad path" do
-    describe "POST /customers" do
+    describe "POST /api/v1/customers" do
       it "fails when creating customer with invalid params" do
         customer_params = {
           customer: {
@@ -109,7 +129,7 @@ RSpec.describe "Customers", type: :request do
           }
         }
 
-        post "/customers", params: customer_params, as: :json
+        post "/api/v1/customers", params: customer_params, as: :json
 
         expect(response.status).to eq(422)
 
@@ -119,11 +139,11 @@ RSpec.describe "Customers", type: :request do
       end
     end
 
-    describe "PATCH /customers/:id/move_stage" do
+    describe "PATCH /api/v1/customers/:id" do
       it "fails when updating to an invalid stage" do
         customer = create(:customer, name: "Test Customer", stage: "lead")
 
-        patch "/customers/#{customer.id}/move_stage",
+        patch "/api/v1/customers/#{customer.id}",
           params: {
             customer: {
               stage: "invalid_stage"
@@ -137,11 +157,30 @@ RSpec.describe "Customers", type: :request do
 
         expect(json).to have_key("errors")
       end
+
+      it "fails when updating customer with invalid params" do
+        customer = create(:customer, name: "Test Customer")
+
+        patch "/api/v1/customers/#{customer.id}",
+          params: {
+            customer: {
+              email: "",
+              name: "Updated"
+            }
+          },
+          as: :json
+
+        expect(response.status).to eq(422)
+
+        json = JSON.parse(response.body)
+
+        expect(json).to have_key("errors")
+      end
     end
 
-    describe "DELETE /customers/:id" do
+    describe "DELETE /api/v1/customers/:id" do
       it "fails when deleting a non-existent customer" do
-        delete "/customers/99999", as: :json
+        delete "/api/v1/customers/99999", as: :json
 
         expect(response.status).to eq(404)
 
