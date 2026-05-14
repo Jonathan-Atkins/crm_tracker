@@ -5,6 +5,11 @@ class Api::V1::CustomersController < ApplicationController
 
   def index
     customers = Customer.order(:stage)
+
+    if params[:stage].present?
+      customers = customers.where(stage: params[:stage])
+    end
+
     render json: customers, status: :ok
   end
 
