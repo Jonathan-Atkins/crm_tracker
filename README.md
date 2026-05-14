@@ -1,118 +1,286 @@
-# Software Engineering Take-Home Project: Customer Pipeline Tracker
+# CRM Tracker API
 
-**Time Estimate:** 2-4 hours  
-**Submission:** GitHub repo + 30-min walkthrough call
+## Demo
 
----
+### POST - Creating a Customer
+![POST Request](public/POST.png)
 
-## The Challenge
+### PATCH - Updating Customer Attributes
+![PATCH Request](public/PATCH.png)
 
-Build a simple CRM pipeline tracker. Customers move through stages as they progress from lead to closed deal.
+### GET - Stage Filter
+![GET with Stage Filter](public/GET_Stage_Filter.png)
 
-### Pipeline Stages
+## Overview
 
-1. **Lead** — Initial contact info captured
-2. **Contacted** — Reached out to the customer
-3. **Qualified** — Confirmed they're a good fit
-4. **Trial/Demo** — Scheduled or completed a demo
-5. **Closed** — Won or lost
+CRM Tracker API is my **backend-only** submission for the Customer Pipeline Tracker take-home.
 
----
+I chose the backend track so I could focus on:
+- clean REST API design
+- data modeling
+- explicit business rules around stage transitions
+- error handling
+- automated tests
 
-## Choose Your Focus
+This app manages customers through a sales pipeline and records stage movements in a separate `StageLog` audit table.
 
-Pick the track that plays to your strengths:
+## Why I Chose the Backend Track
 
-| Track | What You'll Build |
-|-------|-------------------|
-| **Frontend** | Build the UI. Mock the data or use a simple JSON file. |
-| **Backend** | Build the API and database. No UI required — Postman/curl is fine. |
-| **Fullstack** | Build both. Doesn't need to be polished — just functional. |
+I chose the backend track to focus on API design, data modeling, and system behavior under a constrained time window. Since the prompt explicitly stated that each track is weighted equally, I prioritized building a clean, well-structured API rather than splitting effort between a UI and backend.
 
-All tracks are weighted equally. We'd rather see something done well than everything done halfway.
+This allowed me to spend more time on:
+- Designing RESTful endpoints with clear responsibilities
+- Modeling the customer pipeline using enums and relational data
+- Implementing stage transitions with proper validation and audit logging
+- Handling edge cases and ensuring consistent error responses
 
----
+Given my interest in backend and DevOps-oriented work, I also approached this with an emphasis on predictable behavior, data integrity (via transactions), and testability, which are critical in production systems.
 
-## Requirements
+Overall, I chose depth over breadth to demonstrate strong backend fundamentals.
 
-### If you choose Frontend:
+## Tech Stack
 
-1. Display customers organized by pipeline stage (kanban board, table, or list — your call)
-2. Add a new customer (name, email, company, stage)
-3. Move a customer between stages
-4. Basic filtering or search (by name, company, or stage)
+- Ruby 3.2.2
+- Rails 8.1.3
+- Rails API-only mode
+- PostgreSQL
+- Active Model Serializers
+- RSpec Rails
+- FactoryBot
+- SimpleCov
 
-**Tech:** Use whatever you're comfortable with — React, Vue, vanilla JS, etc.
+## Pipeline Stages
 
-**Data:** Mock it however you want — hardcoded JSON, local storage, or a fake API.
+This API supports the following stage values:
 
-### If you choose Backend:
+- `lead`
+- `contacted`
+- `qualified`
+- `trial_demo`
+- `closed_won`
+- `closed_lost`
 
-1. REST API with full CRUD for customers
-2. Endpoint to move a customer to a new stage (should track when they moved)
-3. Endpoint to list customers, filterable by stage
-4. Data persistence (SQLite is fine)
+### Note on the "Closed" stage
 
-**Tech:** Use whatever you're comfortable with — Node/Express, Python/FastAPI, Go, etc.
+The original prompt described a single **Closed** stage that could be either won or lost. I chose to model that as two explicit states—`closed_won` and `closed_lost`—so the API can distinguish outcomes more clearly.
 
-### If you choose Fullstack:
+## Data Model
 
-Build both of the above. Keep it simple — we're looking for it to work end-to-end, not be production-ready.
+### Customer
 
----
+Minimum fields:
+- `id`
+- `name`
+- `email`
+- `company`
+- `stage`
+- `created_at`
+- `updated_at`
 
-## Data Model (minimum)
+### StageLog
 
-You can extend this, but at minimum:
+Bonus audit-trail model used to track stage changes:
+- `id`
+- `customer_id`
+- `from_stage`
+- `to_stage`
+- `created_at`
+- `updated_at`
 
-- **Customer** — id, name, email, company, stage, created_at, updated_at
+`StageLog.created_at` serves as the timestamp for when the customer moved stages.
 
-Bonus if you track stage history (when did they move from Lead → Contacted?), but not required.
+## Running the App
 
----
+### Prerequisites
 
-## Deliverables
+- Ruby 3.2.2
+- PostgreSQL running locally
 
-1. **Code** — Clean, readable code with comments explaining key decisions
-2. **README** — Brief doc covering:
-   - Which track you chose and why
-   - How to run it
-   - What you'd improve with more time
-3. **Demo evidence** — Screenshots, screen recording, or example API requests showing it works
+### Setup
 
----
+```bash
+git clone https://github.com/Jonathan-Atkins/crm_tracker.git
+cd crm_tracker
+bundle install
+bin/rails db:create db:migrate
+bin/rails s
+```
 
-## What We're Looking For
+The API will be available at:
 
-| Track | We're Evaluating |
-|-------|------------------|
-| **Frontend** | Component structure, state management, UI/UX decisions |
-| **Backend** | API design, data modeling, error handling |
-| **Fullstack** | How you connect the pieces, tradeoffs you made |
+```bash
+http://localhost:3000
+```
 
-**For everyone:** Code quality, communication in your README, product thinking.
+## Running the Test Suite
 
----
+```bash
+bundle exec rspec
+```
 
-## Not Required (But Nice to Have)
+## API Endpoints
 
-- Stage change history/audit log
-- Drag-and-drop between stages
-- Authentication
-- Tests
-- Deployment
+### Customers
 
----
+- `GET /api/v1/customers`
+- `GET /api/v1/customers?stage=lead`
+- `GET /api/v1/customers/:id`
+- `POST /api/v1/customers`
+- `PATCH /api/v1/customers/:id`
+- `DELETE /api/v1/customers/:id`
 
-## Notes for the Walkthrough Call
+### Stage Movement
 
-Come prepared to:
+- `PATCH /api/v1/customers/:id/move_stage`
 
-1. Demo what you built (live or screen share)
-2. Walk through your code and explain key decisions
-3. Discuss tradeoffs — what would you do differently with more time?
-4. Talk through how you'd build the parts you didn't build
+## Request Examples
 
----
+### Get all customers
 
-**Questions?** Email [YOUR EMAIL] before starting.
+```bash
+curl http://localhost:3000/api/v1/customers
+```
+
+### Filter customers by stage
+
+```bash
+curl "http://localhost:3000/api/v1/customers?stage=lead"
+```
+
+### Create a customer
+
+```bash
+curl -X POST http://localhost:3000/api/v1/customers \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": {
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "company": "Acme Co",
+      "stage": "lead"
+    }
+  }'
+```
+
+### Show one customer
+
+```bash
+curl http://localhost:3000/api/v1/customers/1
+```
+
+### Update non-stage customer attributes
+
+```bash
+curl -X PATCH http://localhost:3000/api/v1/customers/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": {
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com",
+      "company": "Updated Co"
+    }
+  }'
+```
+
+### Move a customer to a new stage
+
+```bash
+curl -X PATCH http://localhost:3000/api/v1/customers/1/move_stage \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": {
+      "stage": "contacted"
+    }
+  }'
+```
+
+### Delete a customer
+
+```bash
+curl -X DELETE http://localhost:3000/api/v1/customers/1
+```
+
+## Important API Behavior
+
+### Stage changes are handled separately
+
+A normal `PATCH /api/v1/customers/:id` request is intentionally **not allowed** to update `stage`.
+
+If a client tries to change `stage` through the normal update endpoint, the API returns a `422` error and instructs the client to use the `move_stage` endpoint instead.
+
+This keeps stage-transition logic in one place and ensures that stage changes are tracked consistently.
+
+### Serialized JSON responses
+
+Customer responses are intentionally limited through a serializer so the API returns a consistent JSON shape.
+
+## Demo Notes
+
+For a walkthrough, I would demo the API in this order:
+
+1. Create a customer
+2. List customers
+3. Filter customers by stage
+4. Update non-stage fields
+5. Attempt an invalid stage update through the normal update endpoint
+6. Move a customer through the dedicated `move_stage` endpoint
+7. Verify that a `StageLog` record was created
+8. Delete a customer
+
+### Verifying stage history
+
+Because I did not add a public stage-history endpoint, the easiest way to verify stage tracking is in the Rails console:
+
+```bash
+bin/rails console
+```
+
+```ruby
+customer = Customer.find(1)
+
+customer.stage_logs.order(:created_at).map do |log|
+  {
+    from_stage: Customer.stages.key(log.from_stage),
+    to_stage: Customer.stages.key(log.to_stage),
+    moved_at: log.created_at
+  }
+end
+```
+
+## Design Decisions
+
+- **API-only Rails app** to keep the project focused on backend concerns
+- **Versioned routes (`/api/v1`)** to make future API evolution easier
+- **Resourceful REST routes** for conventional CRUD behavior
+- **Dedicated `move_stage` endpoint** so stage transitions are explicit and auditable
+- **`enum` for stage values** to keep the allowed pipeline values consistent
+- **`StageLog` audit table** to track stage changes over time
+- **Transaction around stage updates** so the stage change and audit log succeed or fail together
+- **Serializer-based responses** to keep the JSON payload intentional
+- **RSpec request and model specs** to cover happy and sad paths
+
+## What I Would Improve With More Time
+
+- Add an endpoint to expose stage history (for example `GET /api/v1/customers/:id/stage_logs`)
+- Add stronger validations such as:
+  - email format
+  - email uniqueness
+  - database-level constraints for required fields
+- Standardize error payloads for invalid stage transitions and validation failures
+- Add request-spec coverage for stage filtering
+- Add serializer specs
+- Add pagination and search by name/company
+- Add CI
+- Add a Postman collection to the repo
+- Add Docker or a more turnkey local setup for PostgreSQL
+- Build a small frontend (kanban board or table view) on top of these endpoints
+
+## If I Built the Frontend Next
+
+I would likely build a lightweight UI that:
+
+- groups customers by pipeline stage
+- lets users create customers
+- filters by stage/name/company
+- uses the dedicated `move_stage` endpoint for drag-and-drop or button-based transitions
+- optionally renders stage history for each customer
