@@ -39,7 +39,7 @@ RSpec.describe Customer, type: :model do
   describe "enums" do
     it "defines valid enum stages" do
       customer = build(:customer)
-      expect(Customer.stages.keys).to include("lead", "contacted", "qualified", "trial_demo", "closed")
+      expect(Customer.stages.keys).to include("lead", "contacted", "qualified", "trial_demo", "closed_won", "closed_lost")
     end
   end
 end

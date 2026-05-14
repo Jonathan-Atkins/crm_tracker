@@ -3,6 +3,6 @@ FactoryBot.define do
     name { "MyString" }
     email { "MyString" }
     company { "MyString" }
-    stage { 1 }
+    stage { 0 }
   end
 end

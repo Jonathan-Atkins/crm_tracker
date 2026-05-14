@@ -7,7 +7,6 @@ RSpec.describe "Customers", type: :request do
         create_list(:customer, 3)
 
         get "/customers", as: :json
-
         expect(response.status).to eq(200)
 
         json = JSON.parse(response.body)

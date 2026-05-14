@@ -15,6 +15,7 @@ class CustomersController < ApplicationController
     customer = Customer.new(customer_params)
 
     if customer.save
+      update_log(customer,nil,customer.stage)
       render json: customer, status: :created
     else
       render_validation_errors(customer)
@@ -28,11 +29,7 @@ class CustomersController < ApplicationController
 
     begin
       customer.update!(stage: new_stage)  # Use update! to raise on invalid enum
-      StageLog.create!(
-        customer: customer,
-        from_stage: Customer.stages[old_stage],
-        to_stage: Customer.stages[new_stage]
-      )
+      update_log(customer,old_stage,new_stage)
       render json: customer, status: :ok
     rescue ArgumentError, ActiveRecord::RecordInvalid
       render_validation_errors(customer)
@@ -61,5 +58,13 @@ class CustomersController < ApplicationController
 
   def render_validation_errors(record)
     render json: { errors: record.errors.full_messages }, status: :unprocessable_entity
+  end
+
+  def update_log(customer,from_stage,to_stage)
+    StageLog.create!(
+        customer: customer,
+        from_stage: from_stage,
+        to_stage: to_stage
+      )
   end
 end

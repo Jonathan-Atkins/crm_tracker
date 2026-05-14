@@ -15,10 +15,10 @@ RSpec.describe StageLog, type: :model do
       expect(stage_log).to be_valid
     end
 
-    it "is invalid without from_stage" do
+    it "is valid without from_stage" do
       stage_log = build(:stage_log, from_stage: nil)
-      expect(stage_log).not_to be_valid
-      expect(stage_log.errors[:from_stage]).to be_present
+      expect(stage_log).to be_valid
+      expect(stage_log.errors[:from_stage]).to eq([])
     end
 
     it "is invalid without to_stage" do

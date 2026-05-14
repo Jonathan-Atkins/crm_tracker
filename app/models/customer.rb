@@ -5,13 +5,14 @@ class Customer < ApplicationRecord
     contacted: 1,
     qualified: 2,
     trial_demo: 3,
-    closed: 4
-  }
+    closed_won: 4,
+    closed_lost: 5
+  }, default: :lead
 
   has_many :stage_logs, dependent: :destroy
 
   validates :name, presence: true
   validates :email, presence: true
   validates :company, presence: true
-  validates :stage, presence: true 
+  validates :stage, presence: true
 end
