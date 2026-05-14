@@ -162,6 +162,26 @@ RSpec.describe "API::V1::Customers", type: :request do
 
         expect(json).to have_key("errors")
       end
+
+      it "fails when trying to update stage through update endpoint" do
+        customer = create(:customer, name: "Test Customer", stage: "lead")
+
+        patch "/api/v1/customers/#{customer.id}",
+          params: {
+            customer: {
+              name: "Updated",
+              stage: "contacted"
+            }
+          },
+          as: :json
+
+        expect(response.status).to eq(422)
+
+        json = JSON.parse(response.body)
+
+        expect(json).to have_key("error")
+        expect(json["error"]).to eq("Stage must be updated through move_stage endpoint")
+      end
     end
 
     describe "PATCH /api/v1/customers/:id/move_stage" do
